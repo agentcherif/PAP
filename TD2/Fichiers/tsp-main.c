@@ -106,7 +106,8 @@ void verifier_minimum(int lg, chemin_t chemin)
 void tsp_seq(int etape, int lg, chemin_t chemin, int mask)
 {
   int ici, dist;
-
+  if (lg + distance[0][chemin[etape-1]]>= minimum) 
+    return;
   if (etape == nbVilles)
     verifier_minimum(lg, chemin);
   else
@@ -128,6 +129,8 @@ void tsp_seq(int etape, int lg, chemin_t chemin, int mask)
 void tsp_ompfor(int etape, int lg, chemin_t chemin, int mask)
 {
   int ici, dist;
+  if (lg + distance[0][chemin[etape-1]]>= minimum) 
+    return;
   if (etape > grain)
      tsp_seq(1, 0, chemin, 1);
   else{
@@ -196,6 +199,7 @@ void tsp_ompcol3()
 void tsp_ompcol2()
 {
   int i,j;
+  
 #pragma omp parallel for collapse(2) schedule(runtime)
  for (i=1; i < nbVilles; i++)
    for(j=1; j < nbVilles; j++)
