@@ -15,15 +15,23 @@ int g(int i){
 
 int main()
 {
-  int x;
-  #pragma omp task shared(x)
-  x = f(2);
+   
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+    int x;
+    int y;
+    #pragma omp task shared(x) //firstprivate(y)
+    x = f(2);
 
-  int y;
-  #pragma omp task shared(y)
-  y = g(3);
-
-  #pragma omp taskwait
-  printf("résultat %d\n", x+y);
+    #pragma omp task shared(y) //firstprivate(x)
+    y = g(3);
+    #pragma omp taskwait
+    printf("résultat %d\n", x+y);
+  }
+}
+  
+  
   return 0;
 }

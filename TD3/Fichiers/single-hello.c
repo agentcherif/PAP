@@ -26,20 +26,13 @@ int main()
   { 
 #pragma omp single
     { 
-	  #pragma omp task 
       for (int i = 0 ; bonjour[i] != NULL; i++)  
+	  #pragma omp task depend(out: bonjour[i]) 
 		printf("%s (%d)\n",bonjour[i], omp_get_thread_num());
-	  #pragma omp taskwait
+	   #pragma omp taskwait
       for (int i = 0 ; aurevoir[i] != NULL; i++)  
+	 #pragma omp task depend(in: bonjour[i])
 		printf("%s (%d)\n",aurevoir[i], omp_get_thread_num());
-		
-		// for (int i = 0; i < 5; i++)
-		// {	
-		// 	#pragma omp task
-		// 	printf("%s (%d)\n",bonjour[i], omp_get_thread_num());
-		// 	#pragma omp task
-		// 	printf("%s (%d)\n",aurevoir[i], omp_get_thread_num());
-		// }
 		
     }
   }

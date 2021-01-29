@@ -21,28 +21,28 @@ int main()
 {
 #pragma omp parallel num_threads(4)
   {
-    int me ;
-    #pragma omp atomic capture
-    me = id++;
-#pragma omp taskgroup
-{
+  int me ;
+  #pragma omp atomic capture
+  me = id++;
 #pragma omp single nowait
-    {
-      printf("tache %d va créer A et B \n", me);
-      creer_tache("A",me);
-      creer_tache("B",me);
-    }
+  #pragma omp taskgroup
+  {
+    printf("tache %d va créer A et B \n", me);
+    creer_tache("A",me);
+    creer_tache("B",me);
+  }
 
-
+#pragma omp taskwait
 #pragma omp single nowait
+  #pragma omp taskgroup
     {
       printf("tâche %d va créer C et D \n", me);
       creer_tache("C",me);
       creer_tache("D",me);
     }
     
-  }
-// #pragma omp taskgroup
+  // }
+#pragma omp taskwait
     printf("tache %d a passé taskgroup \n", me);
 }
   return 0;
