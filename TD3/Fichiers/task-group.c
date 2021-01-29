@@ -24,6 +24,8 @@ int main()
     int me ;
     #pragma omp atomic capture
     me = id++;
+#pragma omp taskgroup
+{
 #pragma omp single nowait
     {
       printf("tache %d va créer A et B \n", me);
@@ -31,7 +33,7 @@ int main()
       creer_tache("B",me);
     }
 
-#pragma omp taskgroup
+
 #pragma omp single nowait
     {
       printf("tâche %d va créer C et D \n", me);
@@ -39,8 +41,9 @@ int main()
       creer_tache("D",me);
     }
     
-#pragma omp taskgroup
-    printf("tache %d a passé taskgroup \n", me);
   }
+// #pragma omp taskgroup
+    printf("tache %d a passé taskgroup \n", me);
+}
   return 0;
 }
