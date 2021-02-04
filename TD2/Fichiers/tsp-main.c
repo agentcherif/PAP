@@ -155,7 +155,107 @@ void tsp_ompfor(int etape, int lg, chemin_t chemin, int mask)
   }
 }
 
+// tsp_task() with taskwait
+void tsp_task(int etape, int lg, chemin_t chemin, int mask)
+{
+  int ici, dist;
+  if (lg + distance[0][chemin[etape-1]]>= minimum) 
+    return;
+  if (etape > grain)
+     tsp_seq(1, 0, chemin, 1);
+  else{
+    if (etape == nbVilles)
+      verifier_minimum(lg, chemin);
+    else
+    {
+      ici = chemin[etape - 1];
+      for (int i = 1; i < nbVilles; i++)
+      {
+        if (!present(i, mask))
+        {
+          #pragma omp task
+          {
+            chemin_t tmp_chemin;
+            memcpy(tmp_chemin,chemin, etape * sizeof(int));
+            tmp_chemin[etape] = i;
+            dist = distance[ici][i];
+            tsp_task(etape + 1, lg + dist, tmp_chemin, mask | (1 << i));
+          }
+        }
+      }
+    }
+  }
+  #pragma omp taskwait
+}
 
+// tsp_task() with firstprivate
+void tsp_task_fistprivate(int etape, int lg, chemin_t chemin, int mask)
+{
+  int ici, dist;
+  if (lg + distance[0][chemin[etape-1]]>= minimum) 
+    return;
+  if (etape > grain)
+     tsp_seq(1, 0, chemin, 1);
+  else{
+    if (etape == nbVilles)
+      verifier_minimum(lg, chemin);
+    else
+    {
+      ici = chemin[etape - 1];
+      for (int i = 1; i < nbVilles; i++)
+      {
+        if (!present(i, mask))
+        {
+          chemin_t tmp_chemin;
+          #pragma omp task firstprivate(i,tmp_chemin,ici,dist,etape)
+          {
+            memcpy(tmp_chemin,chemin, etape * sizeof(int));
+            tmp_chemin[etape] = i;
+            dist = distance[ici][i];
+            tsp_task_fistprivate(etape + 1, lg + dist, tmp_chemin, mask | (1 << i));
+          }
+        }
+      }
+    }
+  }
+}
+
+// tsp_task() with dynamique
+void tsp_task_dynamic(int etape, int lg, chemin_t chemin, int mask)
+{
+  int ici, dist;
+  if (lg + distance[0][chemin[etape-1]]>= minimum) 
+    return;
+  if (etape > grain)
+     tsp_seq(1, 0, chemin, 1);
+  else{
+    if (etape == nbVilles)
+      verifier_minimum(lg, chemin);
+    else
+    {
+      ici = chemin[etape - 1];
+      for (int i = 1; i < nbVilles; i++)
+      {
+        if (!present(i, mask))
+        {
+          chemin_t tmp_chemin;
+          tmp_chemin = (chemin_t*) malloc(etape * sizeof(int)) ;
+          #pragma omp task firstprivate(i,ici,tmp_chemin,dist,etape)
+          {
+            memcpy(tmp_chemin,chemin, etape * sizeof(int));
+            tmp_chemin[etape] = i;
+            dist = distance[ici][i];
+            tsp_task_dynamic(etape + 1, lg + dist, tmp_chemin, mask | (1 << i));
+          }
+          #pragma omp taskwait
+          free(tmp_chemin);
+        }
+      }
+    }
+  }
+}
+
+// tsp_ompcol4()
 void tsp_ompcol4()
 {
   int i,j,k;
@@ -176,7 +276,7 @@ void tsp_ompcol4()
 	      tsp_seq (5, dist, chemin,  1 | (1<<i) | (1<<j) | (1<<k) | (1<<l)) ;
          }
 }
-
+// tsp_ompcol3()
 void tsp_ompcol3()
 {
   int i,j,k;
@@ -196,6 +296,7 @@ void tsp_ompcol3()
          }
 }
 
+// tsp_ompcol2()
 void tsp_ompcol2()
 {
   int i,j;
@@ -240,6 +341,21 @@ int main(int argc, char **argv)
     tsp_ompcol3();
   else if (!strcmp(argv[argc-1],"ompfor2")) 
     tsp_ompcol2();
+  else if (!strcmp(argv[argc-1],"task")){
+    #pragma omp parallel
+    #pragma omp single
+    tsp_task(1, 0, chemin, 1);
+  }
+  else if (!strcmp(argv[argc-1],"task-first")){
+    #pragma omp parallel
+    #pragma omp single
+    tsp_task_fistprivate(1, 0, chemin, 1);
+  }
+  else if (!strcmp(argv[argc-1],"task-dynamic")){
+    #pragma omp parallel
+    #pragma omp single
+    tsp_task_dynamic(1, 0, chemin, 1);
+  }
   else
   {
       printf("kernel inconnu\n");
