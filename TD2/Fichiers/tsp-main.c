@@ -201,15 +201,15 @@ void tsp_task_fistprivate(int etape, int lg, chemin_t chemin, int mask)
       verifier_minimum(lg, chemin);
     else
     {
+      chemin_t tmp_chemin;
+      memcpy(tmp_chemin,chemin, etape * sizeof(int));
       ici = chemin[etape - 1];
       for (int i = 1; i < nbVilles; i++)
       {
         if (!present(i, mask))
         {
-          chemin_t tmp_chemin;
           #pragma omp task firstprivate(i,tmp_chemin,ici,dist,etape)
           {
-            memcpy(tmp_chemin,chemin, etape * sizeof(int));
             tmp_chemin[etape] = i;
             dist = distance[ici][i];
             tsp_task_fistprivate(etape + 1, lg + dist, tmp_chemin, mask | (1 << i));
@@ -224,34 +224,34 @@ void tsp_task_fistprivate(int etape, int lg, chemin_t chemin, int mask)
 void tsp_task_dynamic(int etape, int lg, chemin_t chemin, int mask)
 {
   int ici, dist;
-  /*if (lg + distance[0][chemin[etape-1]]>= minimum) 
-    return;*/
-    if (etape == nbVilles)
-      verifier_minimum(lg, chemin);
-    else if (etape > grain)
-     tsp_seq(1, 0, chemin, 1);
-    else
+  if (lg + distance[0][chemin[etape-1]]>= minimum) 
+    return;
+  if (etape == nbVilles)
+    verifier_minimum(lg, chemin);
+  else if (etape > grain)
+    tsp_seq(1, 0, chemin, 1);
+  else
+  {
+    // chemin_t tmp_chemin;
+    int* tmp_chemin = (int*) malloc(etape * sizeof(int));
+    memcpy(tmp_chemin,chemin, etape * sizeof(int));
+    ici = chemin[etape - 1];
+    for (int i = 1; i < nbVilles; i++)
     {
-      ici = chemin[etape - 1];
-      for (int i = 1; i < nbVilles; i++)
+      if (!present(i, mask))
       {
-        if (!present(i, mask))
+        #pragma omp task firstprivate(i,ici,tmp_chemin,dist)
         {
-          int * tmp_chemin = (int*) malloc(etape * sizeof(int)) ;
-          memcpy(tmp_chemin,chemin, etape * sizeof(int));
-          #pragma omp task //firstprivate(i,ici,tmp_chemin,dist,etape)
-          {
-            tmp_chemin[etape] = i;
-            dist = distance[ici][i];
-            tsp_task_dynamic(etape + 1, lg + dist, tmp_chemin, mask | (1 << i));
-            
-          }
-          #pragma omp taskwait
+          tmp_chemin[etape] = i;
+          dist = distance[ici][i];
+          tsp_task_dynamic(etape + 1, lg + dist, tmp_chemin, mask | (1 << i));
           free(tmp_chemin);
         }
+       
       }
     }
-  #pragma omp taskwait
+  }
+  // #pragma omp taskwait
 }
 
 // tsp_ompcol4()

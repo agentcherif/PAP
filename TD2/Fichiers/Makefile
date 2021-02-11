@@ -3,8 +3,8 @@
 SOURCE	= $(filter-out collapse.c, $(wildcard *.c))
 EXEC	= $(SOURCE:.c=)
 
-CC	= gcc-10
-CFLAGS	= -fopenmp -O3
+CC	= gcc
+CFLAGS	= -fopenmp -O3 -g
 LDFLAG	= -fopenmp
 LDLIBS	= -lm
 

@@ -4,7 +4,7 @@
 #include <omp.h>
 
 #define T 10
-int A[T][T+1];
+int A[T][T];
 
 int k = 0;
 
@@ -26,8 +26,18 @@ int main (int argc, char **argv)
 #pragma omp single
   for (i=0; i < T; i++ )
     for (j=0; j < T; j++ ){
-#pragma omp task depend(out: A[i][j]) depend(in: A[i][j-1]) depend(in: A[i-1][j]) firstprivate(i,j)
-      tache(i,j);
+      if(i == 0 && j ==0)
+        #pragma omp task depend(out: A[i][j]) firstprivate(i,j)
+        tache(i,j);
+      else if(i==0)
+        #pragma omp task depend(out: A[i][j]) depend(in: A[i][j-1]) firstprivate(i,j)
+        tache(i,j);
+      else if(j==0)
+        #pragma omp task depend(out: A[i][j]) depend(in: A[j][i-1]) firstprivate(i,j)
+        tache(i,j);
+      else
+        #pragma omp task depend(out: A[i][j]) depend(in: A[i][j-1]) depend(in: A[i-1][j]) firstprivate(i,j)
+        tache(i,j);
     }
 
   // affichage du tableau 

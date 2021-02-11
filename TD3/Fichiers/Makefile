@@ -3,7 +3,7 @@
 SOURCE	= $(wildcard *.c)
 EXEC	= $(SOURCE:.c=)
 
-CC	= gcc-10
+CC	= gcc
 CFLAGS	= -fopenmp -O3
 LDFLAG	= -fopenmp
 LDLIBS	= -lm
